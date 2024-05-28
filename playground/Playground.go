@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	. "github.com/zenoda/nnet"
 	"gonum.org/v1/gonum/mat"
-	. "nnet"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module nnet
+module github.com/zenoda/nnet
 
 go 1.22
 
