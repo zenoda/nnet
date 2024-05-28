@@ -36,7 +36,7 @@ func (nn NeuralNet) Train(inputs *mat.Dense, labels *mat.Dense, learnRate float6
 		outputs := nn.forward(inputs, 0)
 		loss := calcLoss(labels, outputs)
 		totalError := calcTotalError(loss)
-		fmt.Printf("Total error of epoch %d: %.15f, weights: %v\n", i, totalError, nn.weights[1])
+		fmt.Printf("Total error of epoch %d: %.15f\n", i, totalError)
 		if totalError < minError {
 			minError = totalError
 			bestEpoch = i
@@ -179,12 +179,12 @@ func NewNeuralNet(config NeuralNetConfig) *NeuralNet {
 	return nn
 }
 
-// 激活函数:sigmoid
+// Sigmoid 激活函数:sigmoid
 func Sigmoid(i int, j int, x float64) float64 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
-// 激活函数：relu
+// Relu 激活函数：relu
 func Relu(i int, j int, x float64) float64 {
 	if x > 0 {
 		return x
@@ -192,12 +192,12 @@ func Relu(i int, j int, x float64) float64 {
 	return 0
 }
 
-// 反响传播函数：dSigmoid
+// DSigmoid 反响传播函数：dSigmoid
 func DSigmoid(i int, j int, x float64) float64 {
 	return (1.0 / (1.0 + math.Exp(-x))) * (1.0 - 1.0/(1.0+math.Exp(-x)))
 }
 
-// 反向传播函数：dRelu
+// DRelu 反向传播函数：dRelu
 func DRelu(i int, j int, x float64) float64 {
 	if x > 0 {
 		return 1
