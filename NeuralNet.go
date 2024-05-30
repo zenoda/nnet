@@ -35,7 +35,7 @@ func (nn NeuralNet) Train(inputs *mat.Dense, labels *mat.Dense, learnRate float6
 	for i := 0; i < maxEpochs; i++ {
 		outputs := nn.forward(inputs, 0)
 		loss := calcLoss(labels, outputs)
-		totalError := calcTotalError(loss)
+		totalError := calcAvgError(loss)
 		fmt.Printf("Total error of epoch %d: %.15f\n", i, totalError)
 		if totalError < minError {
 			minError = totalError
@@ -48,7 +48,7 @@ func (nn NeuralNet) Train(inputs *mat.Dense, labels *mat.Dense, learnRate float6
 	fmt.Printf("Minimum Error: %.15f\n", minError)
 }
 
-func calcTotalError(loss *mat.Dense) float64 {
+func calcAvgError(loss *mat.Dense) float64 {
 	e := new(mat.Dense)
 	e.MulElem(loss, loss)
 	ev := 0.0
@@ -143,13 +143,7 @@ func (nn NeuralNet) Predict(inputs *mat.Dense) (outputs *mat.Dense) {
 func (nn NeuralNet) Evaluate(inputs *mat.Dense, labels *mat.Dense) (avgErr float64) {
 	outputs := nn.Predict(inputs)
 	loss := calcLoss(labels, outputs)
-	lossData := loss.RawMatrix().Data
-	totalErr := 0.0
-	for i := range len(lossData) {
-		val := lossData[i]
-		totalErr += val * val
-	}
-	avgErr = totalErr / float64(len(lossData))
+	avgErr = calcAvgError(loss)
 	return
 }
 
