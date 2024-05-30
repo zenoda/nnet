@@ -140,6 +140,19 @@ func (nn NeuralNet) Predict(inputs *mat.Dense) (outputs *mat.Dense) {
 	return
 }
 
+func (nn NeuralNet) Evaluate(inputs *mat.Dense, labels *mat.Dense) (avgErr float64) {
+	outputs := nn.Predict(inputs)
+	loss := calcLoss(labels, outputs)
+	lossData := loss.RawMatrix().Data
+	totalErr := 0.0
+	for i := range len(lossData) {
+		val := lossData[i]
+		totalErr += val * val
+	}
+	avgErr = totalErr / float64(len(lossData))
+	return
+}
+
 func NewNeuralNet(config NeuralNetConfig) *NeuralNet {
 	randSource := rand.NewSource(time.Now().UnixNano())
 	randGen := rand.New(randSource)
