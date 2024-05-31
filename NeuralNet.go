@@ -12,9 +12,9 @@ type NeuralNetConfig struct {
 	//各层的神经元数量
 	Neurons []int
 	//各层的激活函数。输入层没有。
-	ActivationFuncList []func(int, int, float64) float64
+	ActivationFuncList []func(*mat.Dense) *mat.Dense
 	//各层的求导函数。输入层没有。
-	DerivationFuncList []func(int, int, float64) float64
+	DerivationFuncList []func(*mat.Dense) *mat.Dense
 }
 
 type NeuralNet struct {
@@ -73,9 +73,9 @@ func (nn NeuralNet) forward(inputs *mat.Dense, layer int) *mat.Dense {
 		nn.outputs[layer] = inputs
 	} else {
 		//其他层的输出=激活函数(输入)
-		nn.outputs[layer].Apply(nn.ActivationFuncList[layer-1], inputs)
+		nn.outputs[layer] = nn.ActivationFuncList[layer-1](inputs)
 		//计算并保存当前层的梯度数据
-		nn.slopes[layer].Apply(nn.DerivationFuncList[layer-1], inputs)
+		nn.slopes[layer] = nn.DerivationFuncList[layer-1](inputs)
 	}
 	if layer < len(nn.Neurons)-1 {
 		newInputs := new(mat.Dense)
@@ -130,8 +130,7 @@ func (nn NeuralNet) Predict(inputs *mat.Dense) (outputs *mat.Dense) {
 		if layer == 0 {
 			outputs = inputs
 		} else {
-			outputs = new(mat.Dense)
-			outputs.Apply(nn.ActivationFuncList[layer-1], inputs)
+			outputs = nn.ActivationFuncList[layer-1](inputs)
 		}
 		if layer < len(nn.Neurons)-1 {
 			inputs = new(mat.Dense)
@@ -189,43 +188,95 @@ func NewNeuralNet(config NeuralNetConfig) *NeuralNet {
 }
 
 // Sigmoid 激活函数
-func Sigmoid(i int, j int, x float64) float64 {
-	return 1.0 / (1.0 + math.Exp(-x))
+func Sigmoid(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		return 1.0 / (1.0 + math.Exp(-v))
+	}, inputs)
+	return outputs
 }
 
 // Relu 激活函数
-func Relu(i int, j int, x float64) float64 {
-	if x > 0 {
-		return x
-	}
-	return 0
+func Relu(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		if v > 0 {
+			return v
+		}
+		return 0
+	}, inputs)
+	return outputs
 }
 
 // LRelu 激活函数
-func LRelu(i int, j int, x float64) float64 {
-	if x > 0 {
-		return x
+func LRelu(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		if v > 0 {
+			return v
+		}
+		return 0.01 * v
+	}, inputs)
+	return outputs
+}
+
+// Softmax 激活函数
+func Softmax(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		return math.Exp(v)
+	}, inputs)
+	outputsRawData := outputs.RawMatrix().Data
+	rows := outputs.RawMatrix().Rows
+	cols := outputs.RawMatrix().Cols
+	for i := range rows {
+		maxVal := 0.0
+		for j := range cols {
+			maxVal += outputsRawData[i*cols+j]
+		}
+		for j := range cols {
+			outputsRawData[i*cols+j] /= maxVal
+		}
 	}
-	return 0.01 * x
+	return mat.NewDense(rows, cols, outputsRawData)
+}
+
+// DSoftmax 反向传播函数
+func DSoftmax(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Scale(1, inputs)
+	return outputs
 }
 
 // DSigmoid 反响传播函数：dSigmoid
-func DSigmoid(i int, j int, x float64) float64 {
-	return (1.0 / (1.0 + math.Exp(-x))) * (1.0 - 1.0/(1.0+math.Exp(-x)))
+func DSigmoid(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		return (1.0 / (1.0 + math.Exp(-v))) * (1.0 - 1.0/(1.0+math.Exp(-v)))
+	}, inputs)
+	return outputs
 }
 
 // DRelu 反向传播函数：dRelu
-func DRelu(i int, j int, x float64) float64 {
-	if x > 0 {
-		return 1
-	}
-	return 0
+func DRelu(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		if v > 0 {
+			return 1
+		}
+		return 0
+	}, inputs)
+	return outputs
 }
 
 // DLRelu 反向传播函数
-func DLRelu(i int, j int, x float64) float64 {
-	if x > 0 {
-		return 1
-	}
-	return 0.01
+func DLRelu(inputs *mat.Dense) *mat.Dense {
+	outputs := new(mat.Dense)
+	outputs.Apply(func(i, j int, v float64) float64 {
+		if v > 0 {
+			return 1
+		}
+		return 0.01
+	}, inputs)
+	return outputs
 }
