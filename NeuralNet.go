@@ -99,8 +99,8 @@ func (nn NeuralNet) backward(loss *mat.Dense, layer int, learningRate float64) {
 		wAdjusts.Mul(nn.outputs[layer].T(), loss)
 		wAdjusts.Scale(1.0/float64(loss.RawMatrix().Rows), wAdjusts)
 		wAdjusts.Scale(learningRate, wAdjusts)
-		fmt.Printf("Weights: %v\n", nn.weights[layer].RawMatrix().Data)
-		fmt.Printf("Weight Adjusts: %v\n", wAdjusts.RawMatrix().Data)
+		//fmt.Printf("Weights: %v\n", nn.weights[layer].RawMatrix().Data)
+		//fmt.Printf("Weight Adjusts: %v\n", wAdjusts.RawMatrix().Data)
 		nn.weights[layer].Add(nn.weights[layer], wAdjusts)
 		bAdjusts := mat.NewDense(1, loss.RawMatrix().Cols, nil)
 		for i := range loss.RawMatrix().Cols {
