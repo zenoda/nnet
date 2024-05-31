@@ -61,7 +61,7 @@ func calcAvgError(loss *mat.Dense) float64 {
 }
 
 func calcLoss(labels *mat.Dense, outputs *mat.Dense) *mat.Dense {
-	loss := mat.NewDense(labels.RawMatrix().Rows, labels.RawMatrix().Cols, nil)
+	loss := new(mat.Dense)
 	loss.Sub(labels, outputs)
 	return loss
 }
@@ -99,6 +99,8 @@ func (nn NeuralNet) backward(loss *mat.Dense, layer int, learningRate float64) {
 		wAdjusts.Mul(nn.outputs[layer].T(), loss)
 		wAdjusts.Scale(1.0/float64(loss.RawMatrix().Rows), wAdjusts)
 		wAdjusts.Scale(learningRate, wAdjusts)
+		fmt.Printf("Weights: %v\n", nn.weights[layer].RawMatrix().Data)
+		fmt.Printf("Weight Adjusts: %v\n", wAdjusts.RawMatrix().Data)
 		nn.weights[layer].Add(nn.weights[layer], wAdjusts)
 		bAdjusts := mat.NewDense(1, loss.RawMatrix().Cols, nil)
 		for i := range loss.RawMatrix().Cols {
@@ -186,17 +188,25 @@ func NewNeuralNet(config NeuralNetConfig) *NeuralNet {
 	return nn
 }
 
-// Sigmoid 激活函数:sigmoid
+// Sigmoid 激活函数
 func Sigmoid(i int, j int, x float64) float64 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
-// Relu 激活函数：relu
+// Relu 激活函数
 func Relu(i int, j int, x float64) float64 {
 	if x > 0 {
 		return x
 	}
 	return 0
+}
+
+// LRelu 激活函数
+func LRelu(i int, j int, x float64) float64 {
+	if x > 0 {
+		return x
+	}
+	return 0.01 * x
 }
 
 // DSigmoid 反响传播函数：dSigmoid
@@ -210,4 +220,12 @@ func DRelu(i int, j int, x float64) float64 {
 		return 1
 	}
 	return 0
+}
+
+// DLRelu 反向传播函数
+func DLRelu(i int, j int, x float64) float64 {
+	if x > 0 {
+		return 1
+	}
+	return 0.01
 }
