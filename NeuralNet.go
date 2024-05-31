@@ -222,23 +222,30 @@ func LRelu(inputs *mat.Dense) *mat.Dense {
 
 // Softmax 激活函数
 func Softmax(inputs *mat.Dense) *mat.Dense {
-	outputs := new(mat.Dense)
-	outputs.Apply(func(i, j int, v float64) float64 {
-		return math.Exp(v)
-	}, inputs)
-	outputsRawData := outputs.RawMatrix().Data
-	rows := outputs.RawMatrix().Rows
-	cols := outputs.RawMatrix().Cols
+	outputsRawData := inputs.RawMatrix().Data
+	rows := inputs.RawMatrix().Rows
+	cols := inputs.RawMatrix().Cols
 	for i := range rows {
-		maxVal := 0.0
+		var maxVal float64
 		for j := range cols {
-			maxVal += outputsRawData[i*cols+j]
+			data := outputsRawData[i*cols+j]
+			if j == 0 {
+				maxVal = data
+			} else if data > maxVal {
+				maxVal = data
+			}
+		}
+		total := 0.0
+		for j := range cols {
+			outputsRawData[i*cols+j] = math.Exp(outputsRawData[i*cols+j] - maxVal)
+			total += outputsRawData[i*cols+j]
 		}
 		for j := range cols {
-			outputsRawData[i*cols+j] /= maxVal
+			outputsRawData[i*cols+j] /= total
 		}
 	}
-	return mat.NewDense(rows, cols, outputsRawData)
+	outputs := mat.NewDense(rows, cols, outputsRawData)
+	return outputs
 }
 
 // DSoftmax 反向传播函数
